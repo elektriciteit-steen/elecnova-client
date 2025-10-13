@@ -15,10 +15,10 @@ Python client library for the Elecnova ECO EMS Cloud API.
 
 ```bash
 # From GitHub
-pip install git+https://github.com/jwaes/elecnova-client.git
+pip install git+https://github.com/elektriciteit-steen/elecnova-client.git
 
 # From source (for development)
-git clone https://github.com/jwaes/elecnova-client.git
+git clone https://github.com/elektriciteit-steen/elecnova-client.git
 cd elecnova-client
 pip install -e ".[dev]"
 
