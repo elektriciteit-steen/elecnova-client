@@ -3,7 +3,7 @@
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def generate_nonce(length: int = 32) -> str:
@@ -24,7 +24,7 @@ def generate_timestamp() -> str:
     Returns:
         String timestamp in milliseconds since epoch
     """
-    return str(int(datetime.now(timezone.utc).timestamp() * 1000))
+    return str(int(datetime.now(UTC).timestamp() * 1000))
 
 
 def generate_signature(

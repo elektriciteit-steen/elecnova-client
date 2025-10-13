@@ -30,7 +30,9 @@ def transform_cabinet_to_odoo(cabinet: Cabinet) -> dict[str, Any]:
     return record
 
 
-def transform_component_to_odoo(component: Component, cabinet_id: int | None = None) -> dict[str, Any]:
+def transform_component_to_odoo(
+    component: Component, cabinet_id: int | None = None
+) -> dict[str, Any]:
     """Transform Component API model to Odoo elecnova.component record format.
 
     Args:

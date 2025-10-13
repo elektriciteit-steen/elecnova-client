@@ -2,8 +2,6 @@
 
 import re
 
-import pytest
-
 from elecnova_client.auth import (
     generate_auth_headers,
     generate_nonce,

@@ -18,7 +18,9 @@ class Cabinet(BaseModel):
     model: str | None = Field(None, description="Cabinet model (e.g., ECO-E107WS)")
     time_zone: str | None = Field(None, alias="timeZone", description="Cabinet timezone")
     state: str | None = Field(None, description="Cabinet state (online/offline)")
-    last_seen: datetime | None = Field(None, alias="lastSeen", description="Last communication timestamp")
+    last_seen: datetime | None = Field(
+        None, alias="lastSeen", description="Last communication timestamp"
+    )
 
 
 class Component(BaseModel):
@@ -31,7 +33,9 @@ class Component(BaseModel):
     model: str | None = Field(None, description="Component model")
     type: str | None = Field(None, description="Component type")
     state: str | None = Field(None, description="Component state (online/offline)")
-    location_code: str | None = Field(None, alias="locationCode", description="Location code for data point mapping")
+    location_code: str | None = Field(
+        None, alias="locationCode", description="Location code for data point mapping"
+    )
     cabinet_sn: str = Field(..., alias="cabinetSn", description="Parent cabinet serial number")
 
 
@@ -41,7 +45,9 @@ class TokenResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     access_token: str = Field(..., alias="accessToken", description="Bearer token")
-    expires_in: int = Field(..., alias="expiresIn", description="Token validity in seconds (typically 86400 = 24h)")
+    expires_in: int = Field(
+        ..., alias="expiresIn", description="Token validity in seconds (typically 86400 = 24h)"
+    )
     token_type: str = Field(default="Bearer", alias="tokenType", description="Token type")
 
 

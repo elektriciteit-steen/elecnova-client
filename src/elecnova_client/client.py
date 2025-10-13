@@ -1,7 +1,7 @@
 """Async HTTP client for Elecnova API."""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -166,7 +166,7 @@ class ElecnovaClient:
         """
         # Return cached token if still valid
         if self._token and self._token_expires_at:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             # Refresh 5 minutes before expiry
             if now < (self._token_expires_at - timedelta(minutes=5)):
                 return self._token
@@ -189,9 +189,7 @@ class ElecnovaClient:
 
         token_data = api_response.data
         self._token = token_data.access_token
-        self._token_expires_at = datetime.now(timezone.utc) + timedelta(
-            seconds=token_data.expires_in
-        )
+        self._token_expires_at = datetime.now(UTC) + timedelta(seconds=token_data.expires_in)
 
         logger.info(f"Token obtained, expires at {self._token_expires_at}")
         return self._token

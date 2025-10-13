@@ -1,8 +1,6 @@
 """Tests for transform functions."""
 
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from elecnova_client.models import Cabinet, Component
 from elecnova_client.transforms import transform_cabinet_to_odoo, transform_component_to_odoo
@@ -16,7 +14,7 @@ def test_transform_cabinet_to_odoo():
         model="ECO-E107WS",
         timeZone="UTC",
         state="online",
-        lastSeen=datetime(2025, 10, 13, 12, 0, 0, tzinfo=timezone.utc),
+        lastSeen=datetime(2025, 10, 13, 12, 0, 0, tzinfo=UTC),
     )
 
     odoo_record = transform_cabinet_to_odoo(cabinet)
