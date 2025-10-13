@@ -6,14 +6,17 @@ Python client library for the Elecnova ECO EMS Cloud API.
 
 - 🔐 HMAC-SHA256 authentication with automatic token management
 - 📦 Type-safe Pydantic models for API responses
-- ⚡ Async HTTP client using httpx (for Prefect)
-- 🔄 Synchronous wrapper (for Odoo compatibility)
-- 🔧 Transform functions for Odoo integration
+- ⚡ Async HTTP client using httpx
+- 🔄 Synchronous wrapper for non-async environments
 - ✅ Comprehensive test coverage
+- 🚀 Zero dependencies on specific frameworks (works with any Python application)
 
 ## Installation
 
 ```bash
+# From PyPI (recommended)
+pip install elecnova-client
+
 # From GitHub
 pip install git+https://github.com/elektriciteit-steen/elecnova-client.git
 
@@ -28,7 +31,7 @@ pre-commit install
 
 ## Usage
 
-### Async Client (Prefect)
+### Async Client
 
 ```python
 from elecnova_client import ElecnovaClient
@@ -41,15 +44,19 @@ async def main():
 
     # Fetch cabinets
     cabinets = await client.get_cabinets(page=1, page_size=100)
+    for cabinet in cabinets:
+        print(f"Cabinet: {cabinet.sn} - {cabinet.name}")
 
     # Fetch components for a cabinet
     components = await client.get_components(cabinet_sn="ESS123456")
+    for component in components:
+        print(f"Component: {component.sn} ({component.type})")
 
     # Subscribe to MQTT topics
     result = await client.subscribe_mqtt_topics(device_id="123", sn="ESS123456")
 ```
 
-### Sync Client (Odoo)
+### Sync Client
 
 ```python
 from elecnova_client import ElecnovaClientSync
@@ -61,16 +68,8 @@ client = ElecnovaClientSync(
 
 # Fetch cabinets (synchronous)
 cabinets = client.get_cabinets(page=1, page_size=100)
-```
-
-### Transform Functions
-
-```python
-from elecnova_client import transform_cabinet_to_odoo, transform_component_to_odoo
-
-# Convert API models to Odoo record format
-cabinet_dict = transform_cabinet_to_odoo(cabinet)
-component_dict = transform_component_to_odoo(component)
+for cabinet in cabinets:
+    print(f"Cabinet: {cabinet.sn} - {cabinet.name}")
 ```
 
 ## API Reference

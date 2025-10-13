@@ -1,4 +1,10 @@
-"""Elecnova ECO EMS Cloud API Client."""
+"""Elecnova ECO EMS Cloud API Client.
+
+A Python client library for the Elecnova ECO EMS Cloud API.
+
+This library provides async and sync HTTP clients for interacting with the Elecnova
+API, including authentication, cabinet/component management, and MQTT subscription.
+"""
 
 from .client import ElecnovaClient
 from .client_sync import ElecnovaClientSync
@@ -9,7 +15,6 @@ from .exceptions import (
     ElecnovaTimeoutError,
 )
 from .models import Cabinet, Component, TokenResponse
-from .transforms import transform_cabinet_to_odoo, transform_component_to_odoo
 
 __version__ = "0.1.0"
 
@@ -23,6 +28,4 @@ __all__ = [
     "Cabinet",
     "Component",
     "TokenResponse",
-    "transform_cabinet_to_odoo",
-    "transform_component_to_odoo",
 ]
