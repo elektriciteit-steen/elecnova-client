@@ -106,12 +106,12 @@ ruff format .
 
 ## API Documentation
 
-Based on Elecnova ECO EMS Cloud API Interface Document V1.2.1
+Based on Elecnova ECO EMS Cloud API Interface Document V1.3.1
 
-- Authentication: HMAC-SHA256 with client credentials
+- Authentication: GET /comm/client with Base64-encoded HMAC-SHA256 signature
 - Token validity: 24 hours
 - Rate limit: 100 requests/second
-- MQTT: MQTTS protocol (port 8883)
+- MQTT: MQTTS protocol (port 1884)
 
 ## License
 

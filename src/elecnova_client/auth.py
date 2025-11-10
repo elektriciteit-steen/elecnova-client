@@ -64,6 +64,44 @@ def generate_signature(
     return signature.lower()
 
 
+def generate_comm_client_signature(
+    path: str,
+    client_secret: str,
+    timestamp: str,
+) -> str:
+    """Generate signature for /comm/client endpoint.
+
+    Based on Elecnova API v1.3.1 documentation:
+    1. Concatenate: PATH + timestamp
+    2. Use clientSecret as HMAC key
+    3. Generate SHA-256 hash
+    4. Convert to hex string
+    5. Base64 encode the hex string
+
+    Args:
+        path: API path (e.g., "/comm/client")
+        client_secret: Client secret from Elecnova
+        timestamp: Current timestamp in milliseconds
+
+    Returns:
+        Base64-encoded HMAC-SHA256 signature
+    """
+    import base64
+
+    # Concatenate: PATH + timestamp
+    message = f"{path}{timestamp}"
+
+    # Generate HMAC-SHA256 and convert to hex
+    hex_signature = hmac.new(
+        key=client_secret.encode("utf-8"),
+        msg=message.encode("utf-8"),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+
+    # Base64 encode the hex string
+    return base64.b64encode(hex_signature.encode("utf-8")).decode("utf-8")
+
+
 def generate_auth_headers(client_id: str, client_secret: str) -> dict[str, str]:
     """Generate complete authentication headers for API request.
 

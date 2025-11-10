@@ -171,25 +171,46 @@ class ElecnovaClient:
             if now < (self._token_expires_at - timedelta(minutes=5)):
                 return self._token
 
-        # Request new token
-        logger.info("Requesting new access token")
-        auth_headers = generate_auth_headers(self.client_id, self.client_secret)
+        # Request new token using /comm/client endpoint
+        logger.info("Requesting new access token from /comm/client")
 
-        response = await self._request(
-            method="POST",
-            endpoint="/api/v1/auth/token",
-            headers=auth_headers,
-            requires_auth=False,
-        )
+        # Generate timestamp and signature for /comm/client endpoint
+        from .auth import generate_comm_client_signature, generate_timestamp
 
-        # Parse token response
-        api_response = ApiResponse[TokenResponse].model_validate(response)
-        if not api_response.data:
-            raise ElecnovaAuthError("No token data in response")
+        timestamp = generate_timestamp()
+        path = "/comm/client"
+        signature = generate_comm_client_signature(path, self.client_secret, timestamp)
 
-        token_data = api_response.data
-        self._token = token_data.access_token
-        self._token_expires_at = datetime.now(UTC) + timedelta(seconds=token_data.expires_in)
+        # Build headers for /comm/client endpoint
+        auth_headers = {
+            "X-Access-ID": self.client_id,
+            "X-Timestamp": timestamp,
+            "X-Signature": signature,
+        }
+
+        # Use GET method for /comm/client endpoint
+        client = await self._get_http_client()
+        url = f"{self.base_url}{path}"
+
+        try:
+            response = await client.get(url, headers=auth_headers)
+            response.raise_for_status()
+            data = response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
+            raise ElecnovaAuthError(f"Authentication failed: {e.response.text}")
+        except Exception as e:
+            logger.error(f"Request error: {e}")
+            raise ElecnovaAuthError(f"Authentication request failed: {e}")
+
+        # Extract token from response
+        # Response format: {"id": "...", "username": "...", "password": "...", "token": "..."}
+        if "token" not in data:
+            raise ElecnovaAuthError(f"No token in response: {data}")
+
+        self._token = data["token"]
+        # Token expires in 24 hours (86400 seconds) according to API docs
+        self._token_expires_at = datetime.now(UTC) + timedelta(seconds=86400)
 
         logger.info(f"Token obtained, expires at {self._token_expires_at}")
         return self._token
