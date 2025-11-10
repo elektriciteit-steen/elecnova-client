@@ -13,7 +13,7 @@ from .exceptions import (
     ElecnovaRateLimitError,
     ElecnovaTimeoutError,
 )
-from .models import ApiResponse, Cabinet, Component, PaginatedResponse, TokenResponse
+from .models import ApiResponse, Cabinet, Component, PaginatedResponse, PowerDataPoint, TokenResponse
 
 logger = logging.getLogger(__name__)
 
@@ -290,3 +290,102 @@ class ElecnovaClient:
 
         logger.info(f"MQTT subscription successful for device {sn}")
         return response
+
+    async def get_pv_power_cap(self, sn: str, begin: str, end: str) -> list[PowerDataPoint]:
+        """Get PV power generation with 5-minute intervals (v1.3.1+).
+
+        Args:
+            sn: PV equipment serial number
+            begin: Start time in RFC3339 format (e.g., "2025-11-01T00:00:00Z")
+            end: End time in RFC3339 format (e.g., "2025-11-01T23:59:59Z")
+
+        Returns:
+            List of power data points with 5-minute intervals
+        """
+        logger.info(f"Fetching PV power capacity for {sn} from {begin} to {end}")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v1/dev/pv/power-cap/{sn}",
+            params={"begin": begin, "end": end},
+        )
+
+        api_response = ApiResponse[list[PowerDataPoint]].model_validate(response)
+        if not api_response.data:
+            return []
+
+        logger.info(f"Retrieved {len(api_response.data)} power data points")
+        return api_response.data
+
+    async def get_pv_power_gen_daily(self, sn: str) -> list[PowerDataPoint]:
+        """Get PV daily power generation for the past 7 days (v1.3.1+).
+
+        Args:
+            sn: PV equipment serial number
+
+        Returns:
+            List of daily power generation data points for the past 7 days
+        """
+        logger.info(f"Fetching PV daily power generation for {sn}")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v1/dev/pv/power-gen/daily/{sn}",
+        )
+
+        api_response = ApiResponse[list[PowerDataPoint]].model_validate(response)
+        if not api_response.data:
+            return []
+
+        logger.info(f"Retrieved {len(api_response.data)} daily power data points")
+        return api_response.data
+
+    async def get_pv_power_gen_monthly(self, sn: str, month: str) -> list[PowerDataPoint]:
+        """Get PV monthly daily power generation (v1.3.1+).
+
+        Args:
+            sn: PV equipment serial number
+            month: Month in YYYY-MM format (e.g., "2025-11")
+
+        Returns:
+            List of daily power generation data points for the specified month
+        """
+        logger.info(f"Fetching PV monthly power generation for {sn} in {month}")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v1/dev/pv/power-gen/monthly/{sn}",
+            params={"month": month},
+        )
+
+        api_response = ApiResponse[list[PowerDataPoint]].model_validate(response)
+        if not api_response.data:
+            return []
+
+        logger.info(f"Retrieved {len(api_response.data)} daily power data points for month")
+        return api_response.data
+
+    async def get_pv_power_gen_yearly(self, sn: str, year: str) -> list[PowerDataPoint]:
+        """Get PV annual monthly power generation (v1.3.1+).
+
+        Args:
+            sn: PV equipment serial number
+            year: Year in YYYY format (e.g., "2025")
+
+        Returns:
+            List of monthly power generation data points for the specified year
+        """
+        logger.info(f"Fetching PV yearly power generation for {sn} in {year}")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v1/dev/pv/power-gen/yearly/{sn}",
+            params={"year": year},
+        )
+
+        api_response = ApiResponse[list[PowerDataPoint]].model_validate(response)
+        if not api_response.data:
+            return []
+
+        logger.info(f"Retrieved {len(api_response.data)} monthly power data points for year")
+        return api_response.data

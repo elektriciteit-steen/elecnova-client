@@ -2,6 +2,8 @@
 
 Python client library for the Elecnova ECO EMS Cloud API.
 
+**Version 0.1.2** - Updated for API v1.3.1 with photovoltaic power generation support.
+
 ## Features
 
 - 🔐 HMAC-SHA256 authentication with automatic token management
@@ -54,6 +56,15 @@ async def main():
 
     # Subscribe to MQTT topics
     result = await client.subscribe_mqtt_topics(device_id="123", sn="ESS123456")
+
+    # Fetch PV power generation (v1.3.1+)
+    power_data = await client.get_pv_power_cap(
+        sn="PV123456",
+        begin="2025-11-01T00:00:00Z",
+        end="2025-11-01T23:59:59Z"
+    )
+    for point in power_data:
+        print(f"{point.time}: {point.value}W")
 ```
 
 ### Sync Client
@@ -77,8 +88,9 @@ for cabinet in cabinets:
 ### Models
 
 - `Cabinet`: ESS Cabinet data model
-- `Component`: Component (BMS, PCS, Meter, etc.) data model
+- `Component`: Component (BMS, PCS, Meter, etc.) data model with optional `component` and `component_desc` fields [v1.3.1+]
 - `TokenResponse`: OAuth token response
+- `PowerDataPoint`: PV power generation data point [v1.3.1+]
 - `ApiResponse[T]`: Generic API response wrapper
 
 ### Client Methods
@@ -87,6 +99,10 @@ for cabinet in cabinets:
 - `get_cabinets(page, page_size)`: List cabinets with pagination
 - `get_components(cabinet_sn)`: List components for a cabinet
 - `subscribe_mqtt_topics(device_id, sn)`: Subscribe to MQTT topics
+- `get_pv_power_cap(sn, begin, end)`: Get PV power generation (5-minute intervals) [v1.3.1+]
+- `get_pv_power_gen_daily(sn)`: Get PV daily generation (past 7 days) [v1.3.1+]
+- `get_pv_power_gen_monthly(sn, month)`: Get PV monthly daily generation [v1.3.1+]
+- `get_pv_power_gen_yearly(sn, year)`: Get PV annual monthly generation [v1.3.1+]
 
 ## Development
 

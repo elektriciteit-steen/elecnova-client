@@ -37,6 +37,14 @@ class Component(BaseModel):
         None, alias="locationCode", description="Location code for data point mapping"
     )
     cabinet_sn: str = Field(..., alias="cabinetSn", description="Parent cabinet serial number")
+    component: str | None = Field(
+        None, description="Component type code (v1.3.1+): ess.ems, ess.bms, ess.pcs, pv.inv, etc."
+    )
+    component_desc: str | None = Field(
+        None,
+        alias="componentDesc",
+        description="Component type description (v1.3.1+): EMS, BMS, PCS, PV, Meter",
+    )
 
 
 class TokenResponse(BaseModel):
@@ -70,3 +78,12 @@ class PaginatedResponse(BaseModel, Generic[T]):
     page: int = Field(..., description="Current page number")
     page_size: int = Field(..., alias="pageSize", description="Records per page")
     records: list[T] = Field(default_factory=list, description="Page records")
+
+
+class PowerDataPoint(BaseModel):
+    """Power generation data point (v1.3.1+)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    time: str = Field(..., description="Timestamp in RFC3339 format")
+    value: float = Field(..., description="Power value")
