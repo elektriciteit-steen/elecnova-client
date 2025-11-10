@@ -6,14 +6,19 @@ from typing import Any
 
 import httpx
 
-from .auth import generate_auth_headers
 from .exceptions import (
     ElecnovaAPIError,
     ElecnovaAuthError,
     ElecnovaRateLimitError,
     ElecnovaTimeoutError,
 )
-from .models import ApiResponse, Cabinet, Component, PaginatedResponse, PowerDataPoint, TokenResponse
+from .models import (
+    ApiResponse,
+    Cabinet,
+    Component,
+    PaginatedResponse,
+    PowerDataPoint,
+)
 
 logger = logging.getLogger(__name__)
 
