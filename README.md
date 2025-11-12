@@ -2,7 +2,7 @@
 
 Python client library for the Elecnova ECO EMS Cloud API.
 
-**Version 0.1.5** - Critical endpoint fixes and API v1.3.1 support.
+**Version 0.1.6** - Complete authentication fix and API v1.3.1 support (WORKING!).
 
 ## Features
 
@@ -33,27 +33,38 @@ pip install -e ".[dev]"
 pre-commit install
 ```
 
-## Migration Guide (v0.1.4 → v0.1.5)
+## Migration Guide
 
-### CRITICAL: API Endpoint Changes
+### v0.1.5 → v0.1.6 (AUTHENTICATION FIX - NOW WORKING!)
 
-**Version 0.1.5 includes critical endpoint fixes** to match the official Elecnova ECO EMS Cloud API documentation. If you were experiencing empty responses or authentication issues with v0.1.4, this version resolves those problems.
+**Version 0.1.6 includes critical authentication fixes** that make the client fully functional with the Elecnova API.
 
 **What Changed:**
+- ✅ Fixed business API authentication (raw token + all signature headers)
+- ✅ Fixed MQTT subscription endpoint (GET instead of POST)
+- ✅ Fixed response parsing for raw API responses
+- ✅ Updated models to match actual API response format
 
-| Method | Old Endpoint (v0.1.4) | New Endpoint (v0.1.5) | Status |
-|--------|------------------------|------------------------|---------|
-| `get_cabinets()` | `/api/v1/cabinet/list` | `/api/v1/dev` | ✅ Fixed |
-| `get_components()` | `/api/v1/cabinet/{sn}/components` | `/api/v1/dev/{sn}` | ✅ Fixed |
-| All other methods | No changes | No changes | ✅ Already correct |
-
-**No code changes required** - simply upgrade to v0.1.5:
+**No code changes required** - simply upgrade to v0.1.6:
 
 ```bash
 pip install --upgrade elecnova-client
 ```
 
-Your existing code will work without modification. The endpoint changes are internal to the client library.
+**Verified Working:**
+- ✅ Authentication (`/comm/client`)
+- ✅ Get cabinets (`/api/v1/dev`) - Successfully retrieves all cabinets
+- ✅ Get components (`/api/v1/dev/{sn}`) - Successfully retrieves all components
+- ✅ All v1.3.1 features (`component`, `component_desc` fields)
+
+### v0.1.4 → v0.1.5 (ENDPOINT CORRECTIONS)
+
+**Version 0.1.5 fixed critical endpoint paths** to match official documentation:
+
+| Method | Old (v0.1.4) | New (v0.1.5) |
+|--------|--------------|--------------|
+| `get_cabinets()` | `/api/v1/cabinet/list` | `/api/v1/dev` |
+| `get_components()` | `/api/v1/cabinet/{sn}/components` | `/api/v1/dev/{sn}` |
 
 ## Usage
 

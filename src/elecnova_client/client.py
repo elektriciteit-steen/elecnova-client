@@ -101,10 +101,26 @@ class ElecnovaClient:
         url = f"{self.base_url}{endpoint}"
         headers = kwargs.pop("headers", {})
 
-        # Add auth token if required
+        # Add auth token and signature headers if required
         if requires_auth:
+            from .auth import generate_comm_client_signature, generate_timestamp
+
+            # Get Bearer token
             token = await self.get_token()
-            headers["Authorization"] = f"Bearer {token}"
+
+            # Generate signature for this request
+            timestamp = generate_timestamp()
+            signature = generate_comm_client_signature(endpoint, self.client_secret, timestamp)
+
+            # Business APIs require ALL headers: Authorization (raw token, no "Bearer "),
+            # X-Access-ID, X-Timestamp, X-Signature, and optionally X-Language-Type
+            headers.update({
+                "Authorization": token,  # Raw token, no "Bearer " prefix
+                "X-Access-ID": self.client_id,
+                "X-Timestamp": timestamp,
+                "X-Signature": signature,
+                "X-Language-Type": "en",  # Optional: English responses
+            })
 
         try:
             response = await client.request(
@@ -139,13 +155,15 @@ class ElecnovaClient:
             # Parse JSON response
             data = response.json()
 
-            # Check API response code
-            if isinstance(data, dict) and data.get("code") != 200:
-                raise ElecnovaAPIError(
-                    f"API error: {data.get('message', 'Unknown error')}",
-                    status_code=data.get("code"),
-                    response=data,
-                )
+            # Check API response code if present (some endpoints return raw data without wrapping)
+            if isinstance(data, dict) and "code" in data:
+                # Response has a code field - validate it
+                if data.get("code") != 200:
+                    raise ElecnovaAPIError(
+                        f"API error: {data.get('message', 'Unknown error')}",
+                        status_code=data.get("code"),
+                        response=data,
+                    )
 
             return data
 
@@ -242,12 +260,13 @@ class ElecnovaClient:
             params={"page": page, "pageSize": page_size},
         )
 
-        api_response = ApiResponse[PaginatedResponse[Cabinet]].model_validate(response)
-        if not api_response.data:
+        # API returns a raw list of cabinets, not wrapped in ApiResponse
+        if not isinstance(response, list):
+            logger.warning(f"Unexpected response format: {type(response)}")
             return []
 
-        cabinets = api_response.data.records
-        logger.info(f"Retrieved {len(cabinets)} cabinets (total: {api_response.data.total})")
+        cabinets = [Cabinet.model_validate(item) for item in response]
+        logger.info(f"Retrieved {len(cabinets)} cabinets")
         return cabinets
 
     async def get_components(self, cabinet_sn: str) -> list[Component]:
@@ -266,11 +285,22 @@ class ElecnovaClient:
             endpoint=f"/api/v1/dev/{cabinet_sn}",
         )
 
-        api_response = ApiResponse[list[Component]].model_validate(response)
-        if not api_response.data:
+        # API returns cabinet info with components in "parts" array
+        if not isinstance(response, dict):
+            logger.warning(f"Unexpected response format: {type(response)}")
             return []
 
-        components = api_response.data
+        parts = response.get("parts", [])
+        if not parts:
+            logger.info(f"No components found for cabinet {cabinet_sn}")
+            return []
+
+        # Add cabinet_sn to each component
+        components = []
+        for part in parts:
+            part["cabinetSn"] = cabinet_sn  # Add parent cabinet SN
+            components.append(Component.model_validate(part))
+
         logger.info(f"Retrieved {len(components)} components for cabinet {cabinet_sn}")
         return components
 
@@ -289,7 +319,7 @@ class ElecnovaClient:
         logger.info(f"Subscribing to MQTT topics for device {sn}")
 
         response = await self._request(
-            method="POST",
+            method="GET",  # GET per API documentation, not POST
             endpoint=f"/api/v1/dev/topic/{device_id}/{sn}",
         )
 

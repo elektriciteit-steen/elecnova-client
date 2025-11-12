@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - v0.1.5
+## [Unreleased] - v0.1.6
+
+### Fixed
+- **CRITICAL**: Corrected business API authentication to match Elecnova ECO EMS Cloud API specification
+  - Authorization header now uses **raw token** (no "Bearer " prefix)
+  - Business APIs now include **all required headers**: `Authorization`, `X-Access-ID`, `X-Timestamp`, `X-Signature`, `X-Language-Type`
+  - MQTT subscription endpoint changed from POST to GET (`/api/v1/dev/topic/{id}/{sn}`)
+  - Response validation now handles raw data responses (without `code` wrapper)
+  - This fixes "access id is required" and "access token is invalid" errors
+
+### Added
+- Cabinet model: Added `id` field (UUID from API response)
+- Component model: Added `id` field (UUID from API response)
+
+### Changed
+- Component model: `state` field changed from `str` to `bool` (matches API response format)
+- Response handling: More flexible validation for endpoints that return raw lists/dicts
+- `get_cabinets()`: Simplified to handle raw list response (not wrapped in ApiResponse)
+- `get_components()`: Extracts components from `parts` array in cabinet response
+- Authentication: All business API requests now use complete signature + token authentication
+
+## [0.1.5] - 2025-11-12
 
 ### Fixed
 - **CRITICAL**: Corrected API endpoints to match official Elecnova ECO EMS Cloud API v1.3.1 documentation
@@ -19,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Enhanced documentation in README.md with migration guide and v1.3.1 API features
+- Version corrected from 0.1.2 to 0.1.5 (after v0.1.4 release)
 
 ## [0.1.4] - 2025-11-12
 

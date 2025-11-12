@@ -13,6 +13,7 @@ class Cabinet(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
+    id: str = Field(..., description="Cabinet unique ID (UUID)")
     sn: str = Field(..., description="Cabinet serial number (unique identifier)")
     name: str | None = Field(None, description="Cabinet name")
     model: str | None = Field(None, description="Cabinet model (e.g., ECO-E107WS)")
@@ -28,11 +29,12 @@ class Component(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
+    id: str = Field(..., description="Component unique ID")
     sn: str = Field(..., description="Component serial number (unique identifier)")
     name: str | None = Field(None, description="Component name")
     model: str | None = Field(None, description="Component model")
     type: str | None = Field(None, description="Component type")
-    state: str | None = Field(None, description="Component state (online/offline)")
+    state: bool | None = Field(None, description="Component state (True=online, False=offline)")
     location_code: str | None = Field(
         None, alias="locationCode", description="Location code for data point mapping"
     )
