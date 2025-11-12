@@ -139,8 +139,7 @@ class ElecnovaClient:
             # Parse JSON response
             if not response.content:
                 logger.error(
-                    f"Empty response from {method} {endpoint} "
-                    f"(status: {response.status_code})"
+                    f"Empty response from {method} {endpoint} (status: {response.status_code})"
                 )
                 raise ElecnovaAPIError(
                     f"Empty response from API (status: {response.status_code})",
