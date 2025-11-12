@@ -16,7 +16,7 @@ from .exceptions import (
 )
 from .models import Cabinet, Component, PowerDataPoint, TokenResponse
 
-__version__ = "0.1.2"
+__version__ = "0.1.5"
 
 __all__ = [
     "ElecnovaClient",
