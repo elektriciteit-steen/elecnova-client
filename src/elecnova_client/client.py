@@ -16,7 +16,6 @@ from .models import (
     ApiResponse,
     Cabinet,
     Component,
-    PaginatedResponse,
     PowerDataPoint,
 )
 
