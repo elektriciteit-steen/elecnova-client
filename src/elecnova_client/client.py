@@ -113,13 +113,15 @@ class ElecnovaClient:
 
             # Business APIs require ALL headers: Authorization (raw token, no "Bearer "),
             # X-Access-ID, X-Timestamp, X-Signature, and optionally X-Language-Type
-            headers.update({
-                "Authorization": token,  # Raw token, no "Bearer " prefix
-                "X-Access-ID": self.client_id,
-                "X-Timestamp": timestamp,
-                "X-Signature": signature,
-                "X-Language-Type": "en",  # Optional: English responses
-            })
+            headers.update(
+                {
+                    "Authorization": token,  # Raw token, no "Bearer " prefix
+                    "X-Access-ID": self.client_id,
+                    "X-Timestamp": timestamp,
+                    "X-Signature": signature,
+                    "X-Language-Type": "en",  # Optional: English responses
+                }
+            )
 
         try:
             response = await client.request(
