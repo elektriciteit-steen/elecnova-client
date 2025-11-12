@@ -138,14 +138,18 @@ class ElecnovaClient:
 
             # Parse JSON response
             if not response.content:
-                logger.error(
-                    f"Empty response from {method} {endpoint} (status: {response.status_code})"
+                logger.warning(
+                    f"Empty response from {method} {endpoint} (status: {response.status_code}). "
+                    f"Returning empty data structure. This may indicate the API has no data "
+                    f"to return, or there's a configuration issue."
                 )
-                raise ElecnovaAPIError(
-                    f"Empty response from API (status: {response.status_code})",
-                    status_code=response.status_code,
-                    response={"error": "empty_response", "url": url},
-                )
+                # Return a synthetic empty response that matches API structure
+                # This allows graceful handling when there's no data
+                return {
+                    "code": 200,
+                    "message": "Empty response from server",
+                    "data": None,
+                }
 
             try:
                 data = response.json()
