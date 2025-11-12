@@ -137,7 +137,31 @@ class ElecnovaClient:
             response.raise_for_status()
 
             # Parse JSON response
-            data = response.json()
+            if not response.content:
+                logger.error(
+                    f"Empty response from {method} {endpoint} "
+                    f"(status: {response.status_code})"
+                )
+                raise ElecnovaAPIError(
+                    f"Empty response from API (status: {response.status_code})",
+                    status_code=response.status_code,
+                    response={"error": "empty_response", "url": url},
+                )
+
+            try:
+                data = response.json()
+            except Exception as e:
+                logger.error(
+                    f"Failed to parse JSON from {method} {endpoint}: {e}\n"
+                    f"Status: {response.status_code}\n"
+                    f"Content-Type: {response.headers.get('content-type')}\n"
+                    f"Body (first 500 chars): {response.text[:500]}"
+                )
+                raise ElecnovaAPIError(
+                    f"Invalid JSON response: {e}",
+                    status_code=response.status_code,
+                    response={"error": "invalid_json", "body": response.text[:500]},
+                ) from e
 
             # Check API response code
             if isinstance(data, dict) and data.get("code") != 200:
@@ -200,13 +224,39 @@ class ElecnovaClient:
         try:
             response = await client.get(url, headers=auth_headers)
             response.raise_for_status()
-            data = response.json()
+
+            # Check for empty response
+            if not response.content:
+                logger.error(
+                    f"Empty response from authentication endpoint "
+                    f"(status: {response.status_code}, url: {url})"
+                )
+                raise ElecnovaAuthError(
+                    f"Empty response from authentication endpoint (status: {response.status_code})"
+                )
+
+            # Parse JSON response
+            try:
+                data = response.json()
+            except Exception as json_error:
+                logger.error(
+                    f"Failed to parse JSON from auth endpoint: {json_error}\n"
+                    f"Status: {response.status_code}\n"
+                    f"Content-Type: {response.headers.get('content-type')}\n"
+                    f"Body (first 500 chars): {response.text[:500]}"
+                )
+                raise ElecnovaAuthError(
+                    f"Invalid JSON response from auth endpoint: {json_error}"
+                ) from json_error
+
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
-            raise ElecnovaAuthError(f"Authentication failed: {e.response.text}")
+            raise ElecnovaAuthError(f"Authentication failed: {e.response.text}") from e
+        except ElecnovaAuthError:
+            raise
         except Exception as e:
             logger.error(f"Request error: {e}")
-            raise ElecnovaAuthError(f"Authentication request failed: {e}")
+            raise ElecnovaAuthError(f"Authentication request failed: {e}") from e
 
         # Extract token from response
         # Response format: {"id": "...", "username": "...", "password": "...", "token": "..."}
