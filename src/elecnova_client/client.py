@@ -84,7 +84,7 @@ class ElecnovaClient:
 
         Args:
             method: HTTP method (GET, POST, etc.)
-            endpoint: API endpoint (e.g., /api/v1/cabinet/list)
+            endpoint: API endpoint (e.g., /api/v1/dev)
             requires_auth: Whether to include Bearer token (default: True)
             **kwargs: Additional arguments for httpx.request
 
@@ -137,34 +137,7 @@ class ElecnovaClient:
             response.raise_for_status()
 
             # Parse JSON response
-            if not response.content:
-                logger.warning(
-                    f"Empty response from {method} {endpoint} (status: {response.status_code}). "
-                    f"Returning empty data structure. This may indicate the API has no data "
-                    f"to return, or there's a configuration issue."
-                )
-                # Return a synthetic empty response that matches API structure
-                # This allows graceful handling when there's no data
-                return {
-                    "code": 200,
-                    "message": "Empty response from server",
-                    "data": None,
-                }
-
-            try:
-                data = response.json()
-            except Exception as e:
-                logger.error(
-                    f"Failed to parse JSON from {method} {endpoint}: {e}\n"
-                    f"Status: {response.status_code}\n"
-                    f"Content-Type: {response.headers.get('content-type')}\n"
-                    f"Body (first 500 chars): {response.text[:500]}"
-                )
-                raise ElecnovaAPIError(
-                    f"Invalid JSON response: {e}",
-                    status_code=response.status_code,
-                    response={"error": "invalid_json", "body": response.text[:500]},
-                ) from e
+            data = response.json()
 
             # Check API response code
             if isinstance(data, dict) and data.get("code") != 200:
@@ -227,39 +200,13 @@ class ElecnovaClient:
         try:
             response = await client.get(url, headers=auth_headers)
             response.raise_for_status()
-
-            # Check for empty response
-            if not response.content:
-                logger.error(
-                    f"Empty response from authentication endpoint "
-                    f"(status: {response.status_code}, url: {url})"
-                )
-                raise ElecnovaAuthError(
-                    f"Empty response from authentication endpoint (status: {response.status_code})"
-                )
-
-            # Parse JSON response
-            try:
-                data = response.json()
-            except Exception as json_error:
-                logger.error(
-                    f"Failed to parse JSON from auth endpoint: {json_error}\n"
-                    f"Status: {response.status_code}\n"
-                    f"Content-Type: {response.headers.get('content-type')}\n"
-                    f"Body (first 500 chars): {response.text[:500]}"
-                )
-                raise ElecnovaAuthError(
-                    f"Invalid JSON response from auth endpoint: {json_error}"
-                ) from json_error
-
+            data = response.json()
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
-            raise ElecnovaAuthError(f"Authentication failed: {e.response.text}") from e
-        except ElecnovaAuthError:
-            raise
+            raise ElecnovaAuthError(f"Authentication failed: {e.response.text}")
         except Exception as e:
             logger.error(f"Request error: {e}")
-            raise ElecnovaAuthError(f"Authentication request failed: {e}") from e
+            raise ElecnovaAuthError(f"Authentication request failed: {e}")
 
         # Extract token from response
         # Response format: {"id": "...", "username": "...", "password": "...", "token": "..."}
@@ -291,7 +238,7 @@ class ElecnovaClient:
 
         response = await self._request(
             method="GET",
-            endpoint="/api/v1/cabinet/list",
+            endpoint="/api/v1/dev",
             params={"page": page, "pageSize": page_size},
         )
 
@@ -316,7 +263,7 @@ class ElecnovaClient:
 
         response = await self._request(
             method="GET",
-            endpoint=f"/api/v1/cabinet/{cabinet_sn}/components",
+            endpoint=f"/api/v1/dev/{cabinet_sn}",
         )
 
         api_response = ApiResponse[list[Component]].model_validate(response)
