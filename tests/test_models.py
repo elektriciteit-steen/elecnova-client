@@ -9,6 +9,7 @@ from elecnova_client.models import Cabinet, Component, TokenResponse
 def test_cabinet_model():
     """Test Cabinet model validation."""
     cabinet = Cabinet(
+        id="550e8400-e29b-41d4-a716-446655440000",
         sn="ESS123456",
         name="Test Cabinet",
         model="ECO-E107WS",
@@ -16,6 +17,7 @@ def test_cabinet_model():
         state="online",
     )
 
+    assert cabinet.id == "550e8400-e29b-41d4-a716-446655440000"
     assert cabinet.sn == "ESS123456"
     assert cabinet.name == "Test Cabinet"
     assert cabinet.model == "ECO-E107WS"
@@ -25,7 +27,8 @@ def test_cabinet_model():
 
 def test_cabinet_model_minimal():
     """Test Cabinet model with minimal fields."""
-    cabinet = Cabinet(sn="ESS123456")
+    cabinet = Cabinet(id="550e8400-e29b-41d4-a716-446655440000", sn="ESS123456")
+    assert cabinet.id == "550e8400-e29b-41d4-a716-446655440000"
     assert cabinet.sn == "ESS123456"
     assert cabinet.name is None
 
@@ -39,27 +42,30 @@ def test_cabinet_model_missing_sn():
 def test_component_model():
     """Test Component model validation."""
     component = Component(
+        id="660e8400-e29b-41d4-a716-446655440000",
         sn="BMS001",
         name="Battery Management System",
         model="BMS-100",
         type="bms",
-        state="online",
+        state=True,
         locationCode="bms_01",
         cabinetSn="ESS123456",
     )
 
+    assert component.id == "660e8400-e29b-41d4-a716-446655440000"
     assert component.sn == "BMS001"
     assert component.name == "Battery Management System"
     assert component.model == "BMS-100"
     assert component.type == "bms"
-    assert component.state == "online"
+    assert component.state is True
     assert component.location_code == "bms_01"
     assert component.cabinet_sn == "ESS123456"
 
 
 def test_component_model_minimal():
     """Test Component model with minimal fields."""
-    component = Component(sn="BMS001", cabinetSn="ESS123456")
+    component = Component(id="660e8400-e29b-41d4-a716-446655440000", sn="BMS001", cabinetSn="ESS123456")
+    assert component.id == "660e8400-e29b-41d4-a716-446655440000"
     assert component.sn == "BMS001"
     assert component.cabinet_sn == "ESS123456"
     assert component.name is None
