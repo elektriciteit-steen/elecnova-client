@@ -64,7 +64,11 @@ def test_component_model():
 
 def test_component_model_minimal():
     """Test Component model with minimal fields."""
-    component = Component(id="660e8400-e29b-41d4-a716-446655440000", sn="BMS001", cabinetSn="ESS123456")
+    component = Component(
+        id="660e8400-e29b-41d4-a716-446655440000",
+        sn="BMS001",
+        cabinetSn="ESS123456",
+    )
     assert component.id == "660e8400-e29b-41d4-a716-446655440000"
     assert component.sn == "BMS001"
     assert component.cabinet_sn == "ESS123456"
