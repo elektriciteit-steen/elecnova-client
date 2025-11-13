@@ -5,7 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - v0.1.6
+## [Unreleased]
+
+## [0.2.0] - 2025-11-13
+
+### Breaking Changes
+- **`subscribe_mqtt_topics()` signature changed**:
+  - Parameter `device_id` renamed to `mqtt_client_id` (clarifies it's the MQTT Client ID from `/comm/client`)
+  - Added `mode` parameter (1=cabinet level, 2=component level, default: 1)
+  - Old: `subscribe_mqtt_topics(device_id, sn)`
+  - New: `subscribe_mqtt_topics(mqtt_client_id, sn, mode=1)`
+
+### Added
+- **`get_mqtt_credentials()` method**: Fetch MQTT broker credentials from `/comm/client` endpoint
+  - Returns: `{"id": "...", "username": "...", "password": "...", "token": "..."}`
+  - Use `id` field as `mqtt_client_id` parameter for `subscribe_mqtt_topics()`
+  - Username/password for MQTT broker connection
+  - Token for authenticated API calls
+
+### Changed
+- `subscribe_mqtt_topics()`: Now accepts cabinet or component serial numbers based on `mode` parameter
+- MQTT subscription endpoint now includes mode query parameter: `/api/v1/dev/topic/{mqtt_client_id}/{sn}?mode={mode}`
+- Improved logging to show number of topics returned from subscription
+
+## [0.1.6] - 2025-11-12
 
 ### Fixed
 - **CRITICAL**: Corrected business API authentication to match Elecnova ECO EMS Cloud API specification

@@ -82,17 +82,34 @@ class ElecnovaClientSync:
         """
         return self._run_async(self._async_client.get_components(cabinet_sn))
 
-    def subscribe_mqtt_topics(self, device_id: str, sn: str) -> dict[str, Any]:
-        """Subscribe to MQTT topics for a device.
+    def subscribe_mqtt_topics(
+        self, mqtt_client_id: str, sn: str, mode: int = 1
+    ) -> dict[str, Any]:
+        """Subscribe to MQTT topics for a device or component.
 
         Args:
-            device_id: Device ID
-            sn: Device serial number
+            mqtt_client_id: MQTT Client ID (obtained from /comm/client endpoint)
+            sn: Device or component serial number
+            mode: Topic mode - 1 for device/cabinet level, 2 for component level (default: 1)
 
         Returns:
-            Subscription result dictionary
+            Subscription result dictionary containing list of MQTT topics
         """
-        return self._run_async(self._async_client.subscribe_mqtt_topics(device_id, sn))
+        return self._run_async(
+            self._async_client.subscribe_mqtt_topics(mqtt_client_id, sn, mode)
+        )
+
+    def get_mqtt_credentials(self) -> dict[str, Any]:
+        """Get MQTT broker credentials from /comm/client endpoint.
+
+        Returns:
+            Dictionary with keys:
+                - id: MQTT Client ID (use for subscribe_mqtt_topics())
+                - username: MQTT broker username
+                - password: MQTT broker password
+                - token: API access token
+        """
+        return self._run_async(self._async_client.get_mqtt_credentials())
 
     def close(self) -> None:
         """Close HTTP client."""

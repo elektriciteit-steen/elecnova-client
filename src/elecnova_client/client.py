@@ -305,27 +305,86 @@ class ElecnovaClient:
         logger.info(f"Retrieved {len(components)} components for cabinet {cabinet_sn}")
         return components
 
-    async def subscribe_mqtt_topics(self, device_id: str, sn: str) -> dict:
-        """Subscribe to MQTT topics for a device.
+    async def subscribe_mqtt_topics(
+        self, mqtt_client_id: str, sn: str, mode: int = 1
+    ) -> dict:
+        """Subscribe to MQTT topics for a device or component.
 
         Must be called before connecting to MQTT broker to receive real-time data.
+        Returns a list of topics that the MQTT client should subscribe to.
 
         Args:
-            device_id: Device ID
-            sn: Device serial number
+            mqtt_client_id: MQTT Client ID (obtained from /comm/client endpoint)
+            sn: Device or component serial number
+            mode: Topic mode - 1 for device/cabinet level, 2 for component level (default: 1)
 
         Returns:
-            Subscription result dictionary
+            Subscription result dictionary containing list of MQTT topics
         """
-        logger.info(f"Subscribing to MQTT topics for device {sn}")
+        logger.info(f"Subscribing to MQTT topics for {sn} (mode={mode})")
 
         response = await self._request(
             method="GET",  # GET per API documentation, not POST
-            endpoint=f"/api/v1/dev/topic/{device_id}/{sn}",
+            endpoint=f"/api/v1/dev/topic/{mqtt_client_id}/{sn}?mode={mode}",
         )
 
-        logger.info(f"MQTT subscription successful for device {sn}")
+        logger.info(f"MQTT subscription successful for {sn}: {len(response.get('data', []))} topics")
         return response
+
+    async def get_mqtt_credentials(self) -> dict:
+        """Get MQTT broker credentials from /comm/client endpoint.
+
+        Returns MQTT client credentials including client ID, username, password,
+        and API access token. These credentials are needed for:
+        1. Connecting to the MQTT broker (username/password)
+        2. Subscribing to topics via API (client ID)
+        3. Making authenticated API calls (token)
+
+        Returns:
+            Dictionary with keys:
+                - id: MQTT Client ID (use for subscribe_mqtt_topics())
+                - username: MQTT broker username
+                - password: MQTT broker password
+                - token: API access token
+        """
+        logger.info("Fetching MQTT credentials from /comm/client")
+
+        from .auth import generate_comm_client_signature, generate_timestamp
+
+        timestamp = generate_timestamp()
+        path = "/comm/client"
+        signature = generate_comm_client_signature(path, self.client_secret, timestamp)
+
+        # Build headers for /comm/client endpoint
+        auth_headers = {
+            "X-Access-ID": self.client_id,
+            "X-Timestamp": timestamp,
+            "X-Signature": signature,
+        }
+
+        # Use GET method for /comm/client endpoint
+        client = await self._get_http_client()
+        url = f"{self.base_url}{path}"
+
+        try:
+            response = await client.get(url, headers=auth_headers)
+            response.raise_for_status()
+            data = response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
+            raise ElecnovaAuthError(f"Failed to get MQTT credentials: {e.response.text}")
+        except Exception as e:
+            logger.error(f"Request error: {e}")
+            raise ElecnovaAuthError(f"MQTT credentials request failed: {e}")
+
+        # Validate response has all required fields
+        required_fields = ["id", "username", "password", "token"]
+        missing = [f for f in required_fields if f not in data]
+        if missing:
+            raise ElecnovaAuthError(f"Missing fields in response: {missing}")
+
+        logger.info("MQTT credentials obtained successfully")
+        return data
 
     async def get_pv_power_cap(self, sn: str, begin: str, end: str) -> list[PowerDataPoint]:
         """Get PV power generation with 5-minute intervals (v1.3.1+).
