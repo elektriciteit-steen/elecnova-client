@@ -305,9 +305,7 @@ class ElecnovaClient:
         logger.info(f"Retrieved {len(components)} components for cabinet {cabinet_sn}")
         return components
 
-    async def subscribe_mqtt_topics(
-        self, mqtt_client_id: str, sn: str, mode: int = 1
-    ) -> dict:
+    async def subscribe_mqtt_topics(self, mqtt_client_id: str, sn: str, mode: int = 1) -> dict:
         """Subscribe to MQTT topics for a device or component.
 
         Must be called before connecting to MQTT broker to receive real-time data.
@@ -328,7 +326,7 @@ class ElecnovaClient:
             endpoint=f"/api/v1/dev/topic/{mqtt_client_id}/{sn}?mode={mode}",
         )
 
-        topic_count = len(response.get('data', []))
+        topic_count = len(response.get("data", []))
         logger.info(f"MQTT subscription successful for {sn}: {topic_count} topics")
         return response
 

@@ -82,9 +82,7 @@ class ElecnovaClientSync:
         """
         return self._run_async(self._async_client.get_components(cabinet_sn))
 
-    def subscribe_mqtt_topics(
-        self, mqtt_client_id: str, sn: str, mode: int = 1
-    ) -> dict[str, Any]:
+    def subscribe_mqtt_topics(self, mqtt_client_id: str, sn: str, mode: int = 1) -> dict[str, Any]:
         """Subscribe to MQTT topics for a device or component.
 
         Args:
@@ -95,9 +93,7 @@ class ElecnovaClientSync:
         Returns:
             Subscription result dictionary containing list of MQTT topics
         """
-        return self._run_async(
-            self._async_client.subscribe_mqtt_topics(mqtt_client_id, sn, mode)
-        )
+        return self._run_async(self._async_client.subscribe_mqtt_topics(mqtt_client_id, sn, mode))
 
     def get_mqtt_credentials(self) -> dict[str, Any]:
         """Get MQTT broker credentials from /comm/client endpoint.
