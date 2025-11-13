@@ -328,7 +328,8 @@ class ElecnovaClient:
             endpoint=f"/api/v1/dev/topic/{mqtt_client_id}/{sn}?mode={mode}",
         )
 
-        logger.info(f"MQTT subscription successful for {sn}: {len(response.get('data', []))} topics")
+        topic_count = len(response.get('data', []))
+        logger.info(f"MQTT subscription successful for {sn}: {topic_count} topics")
         return response
 
     async def get_mqtt_credentials(self) -> dict:
