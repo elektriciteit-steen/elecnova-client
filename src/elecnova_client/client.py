@@ -153,8 +153,24 @@ class ElecnovaClient:
             # Raise for other HTTP errors
             response.raise_for_status()
 
+            # Log response details for debugging
+            logger.debug(
+                f"API response for {endpoint}: status={response.status_code}, "
+                f"content_length={len(response.content)}, "
+                f"content_type={response.headers.get('content-type')}"
+            )
+
             # Parse JSON response
             data = response.json()
+
+            # Check for null/None response
+            if data is None:
+                logger.error(f"API returned null for {endpoint}")
+                raise ElecnovaAPIError(
+                    f"API returned null response for {endpoint}",
+                    status_code=response.status_code,
+                    response={"error": "null response"},
+                )
 
             # Check API response code if present (some endpoints return raw data without wrapping)
             if isinstance(data, dict) and "code" in data:
