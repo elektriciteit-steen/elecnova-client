@@ -355,11 +355,7 @@ class ElecnovaClient:
             )
 
         # Extract topic strings from array
-        topics = [
-            item["topic"]
-            for item in response
-            if isinstance(item, dict) and "topic" in item
-        ]
+        topics = [item["topic"] for item in response if isinstance(item, dict) and "topic" in item]
 
         logger.info(f"MQTT subscription successful for {sn}: {len(topics)} topics")
         return {"topics": topics, "count": len(topics)}
