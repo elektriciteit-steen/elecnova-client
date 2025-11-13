@@ -333,18 +333,36 @@ class ElecnovaClient:
             mode: Topic mode - 1 for device/cabinet level, 2 for component level (default: 1)
 
         Returns:
-            Subscription result dictionary containing list of MQTT topics
+            Dictionary with:
+                - topics: list of topic strings
+                - count: number of topics
         """
         logger.info(f"Subscribing to MQTT topics for {sn} (mode={mode})")
 
+        endpoint = f"/api/v1/dev/topic/{mqtt_client_id}/{sn}"
         response = await self._request(
             method="GET",  # GET per API documentation, not POST
-            endpoint=f"/api/v1/dev/topic/{mqtt_client_id}/{sn}?mode={mode}",
+            endpoint=endpoint,
+            params={"mode": mode},
         )
 
-        topic_count = len(response.get("data", []))
-        logger.info(f"MQTT subscription successful for {sn}: {topic_count} topics")
-        return response
+        # API returns a JSON array directly: [{"topic": "..."}, ...]
+        if not isinstance(response, list):
+            raise ElecnovaAPIError(
+                f"Unexpected topic response type: {type(response).__name__}, expected list",
+                status_code=0,
+                response=response,
+            )
+
+        # Extract topic strings from array
+        topics = [
+            item["topic"]
+            for item in response
+            if isinstance(item, dict) and "topic" in item
+        ]
+
+        logger.info(f"MQTT subscription successful for {sn}: {len(topics)} topics")
+        return {"topics": topics, "count": len(topics)}
 
     async def get_mqtt_credentials(self) -> dict:
         """Get MQTT broker credentials from /comm/client endpoint.
