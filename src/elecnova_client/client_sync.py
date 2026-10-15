@@ -4,7 +4,7 @@ import asyncio
 from typing import Any
 
 from .client import ElecnovaClient
-from .models import Cabinet, Component
+from .models import Cabinet, Component, Device, Project, Site
 
 
 class ElecnovaClientSync:
@@ -81,6 +81,43 @@ class ElecnovaClientSync:
             List of Component objects
         """
         return self._run_async(self._async_client.get_components(cabinet_sn))
+
+    def get_projects(self) -> list[Project]:
+        """Fetch all projects, the top level of the hierarchy (v2.2.0+).
+
+        Returns:
+            List of Project objects
+        """
+        return self._run_async(self._async_client.get_projects())
+
+    def get_project_sites(
+        self,
+        project_id: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> list[Site]:
+        """Fetch the sites (power stations) of a project with pagination (v2.2.0+).
+
+        Args:
+            project_id: Project UUID (from get_projects())
+            page: Page number (1-indexed)
+            page_size: Number of records per page (API max 1000)
+
+        Returns:
+            List of Site objects for the requested page
+        """
+        return self._run_async(self._async_client.get_project_sites(project_id, page, page_size))
+
+    def get_site_devices(self, site_id: str) -> list[Device]:
+        """Fetch the devices of a site, the leaf level of the hierarchy (v2.2.0+).
+
+        Args:
+            site_id: Site UUID (from get_project_sites())
+
+        Returns:
+            List of Device objects
+        """
+        return self._run_async(self._async_client.get_site_devices(site_id))
 
     def subscribe_mqtt_topics(self, mqtt_client_id: str, sn: str, mode: int = 1) -> dict[str, Any]:
         """Subscribe to MQTT topics for a device or component.

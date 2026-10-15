@@ -2,7 +2,7 @@
 
 Python client library for the Elecnova ECO EMS Cloud API.
 
-**Version 0.1.6** - Complete authentication fix and API v1.3.1 support (WORKING!).
+**Version 0.3.0** - API V2.2.0 project → site → device hierarchy.
 
 ## Features
 
@@ -11,6 +11,7 @@ Python client library for the Elecnova ECO EMS Cloud API.
 - ⚡ Async HTTP client using httpx
 - 🔄 Synchronous wrapper for non-async environments
 - 🌞 Photovoltaic power generation endpoints (v1.3.1+)
+- 🏗️ Project → site → device hierarchy (v2.2.0+) for durable site attribution
 - 🔧 Component type standardization with official codes
 - ✅ Comprehensive test coverage
 - 🚀 Zero dependencies on specific frameworks (works with any Python application)
@@ -73,11 +74,9 @@ pip install --upgrade elecnova-client
 ```python
 from elecnova_client import ElecnovaClient
 
+
 async def main():
-    client = ElecnovaClient(
-        client_id="your_client_id",
-        client_secret="your_client_secret"
-    )
+    client = ElecnovaClient(client_id="your_client_id", client_secret="your_client_secret")
 
     # Fetch ESS cabinets (devices)
     cabinets = await client.get_cabinets(page=1, page_size=100)
@@ -96,16 +95,21 @@ async def main():
         print(f"  State: {component.state}")
 
     # Subscribe to MQTT topics for real-time data
-    result = await client.subscribe_mqtt_topics(
-        device_id="123",
-        sn="ESS123456"
-    )
+    result = await client.subscribe_mqtt_topics(device_id="123", sn="ESS123456")
+
+    # Walk the project -> site -> device hierarchy (v2.2.0+)
+    for project in await client.get_projects():
+        print(f"Project: {project.name} ({project.id})")
+        for site in await client.get_project_sites(project.id):
+            # site.id is the same UUID as the web UI station ID: a durable join key
+            print(f"  Site: {site.name} ({site.id}) {site.rated_power} kW")
+            for device in await client.get_site_devices(site.id):
+                # device.id matches Cabinet.id from get_cabinets()
+                print(f"    Device: {device.sn} ({device.model}) id={device.id}")
 
     # Fetch PV power generation with 5-minute intervals (v1.3.1+)
     power_data = await client.get_pv_power_cap(
-        sn="PV123456",
-        begin="2025-11-01T00:00:00Z",
-        end="2025-11-01T23:59:59Z"
+        sn="PV123456", begin="2025-11-01T00:00:00Z", end="2025-11-01T23:59:59Z"
     )
     for point in power_data:
         print(f"{point.time}: {point.value}W")
@@ -116,16 +120,10 @@ async def main():
         print(f"{point.time}: {point.value} kWh")
 
     # Get PV monthly generation (v1.3.1+)
-    monthly_data = await client.get_pv_power_gen_monthly(
-        sn="PV123456",
-        month="2025-11"
-    )
+    monthly_data = await client.get_pv_power_gen_monthly(sn="PV123456", month="2025-11")
 
     # Get PV yearly generation (v1.3.1+)
-    yearly_data = await client.get_pv_power_gen_yearly(
-        sn="PV123456",
-        year="2025"
-    )
+    yearly_data = await client.get_pv_power_gen_yearly(sn="PV123456", year="2025")
 
     # Always close the client when done
     await client.close()
@@ -136,8 +134,7 @@ async def main():
 ```python
 async def main():
     async with ElecnovaClient(
-        client_id="your_client_id",
-        client_secret="your_client_secret"
+        client_id="your_client_id", client_secret="your_client_secret"
     ) as client:
         cabinets = await client.get_cabinets()
         # Client automatically closes when exiting context
@@ -148,10 +145,7 @@ async def main():
 ```python
 from elecnova_client import ElecnovaClientSync
 
-client = ElecnovaClientSync(
-    client_id="your_client_id",
-    client_secret="your_client_secret"
-)
+client = ElecnovaClientSync(client_id="your_client_id", client_secret="your_client_secret")
 
 # Fetch cabinets (synchronous)
 cabinets = client.get_cabinets(page=1, page_size=100)
@@ -188,6 +182,49 @@ Component (BMS, PCS, Meter, Sensors, etc.) data model.
 - `cabinet_sn`: Parent cabinet serial number
 - `component`: Component type code [v1.3.1+] - see Component Types section
 - `component_desc`: Component type description [v1.3.1+] - see Component Types section
+
+#### Project
+Top level of the hierarchy [v2.2.0+].
+
+**Fields:**
+- `id`: Project UUID
+- `name`: Project name
+- `code`: Project code
+- `region`: Project region (may be an empty string)
+- `addr`: Project address (may be an empty string)
+- `begin_at`: Project start date (YYYY-MM-DD)
+
+#### Site
+Power station, the middle level of the hierarchy [v2.2.0+].
+
+**Fields:**
+- `id`: Site UUID — **the same UUID as the station ID in the Elecnova web UI**, so it is
+  a durable join key for site attribution (names are not)
+- `name`: Site name
+- `rated_power`: Rated power (kW)
+- `rated_capacity`: Rated capacity (kWh) — documented, absent from the live payload
+- `time_zone`: Site timezone (e.g., `Europe/Brussels`)
+- `begin_at`: Site start date — documented, absent from the live payload
+- `addr`: Site address — documented, absent from the live payload
+
+#### Device
+Leaf level of the hierarchy [v2.2.0+].
+
+**Fields:**
+- `id`: Device UUID — **the same UUID as `Cabinet.id` from `GET /api/v1/dev`**, so the v2
+  hierarchy joins cleanly onto the existing v1 device surface
+- `sn`: Device serial number
+- `name`: Device name
+- `model`: Device model (e.g., `ECO-E215WS`)
+
+#### Pagination / PaginatedV2Response
+The envelope of a paginated v2 response: `{"data": [...], "pagination": {"page": 1,
+"page_size": 10, "total_count": 1}}`. The API's own default `page_size` is 10, max 1000.
+
+Note that the v2 endpoints name their fields in **snake_case** on the wire (`time_zone`,
+`begin_at`, `rated_power`, `page_size`, `total_count`), unlike v1 which uses camelCase
+for some fields (`timeZone`, `lastSeen`). The models follow what the API actually
+returns; they do not normalise it.
 
 #### PowerDataPoint
 PV power generation data point [v1.3.1+].
@@ -234,6 +271,22 @@ Access these via `component.component` (code) and `component.component_desc` (de
 - `get_components(cabinet_sn)`: List components for a specific cabinet
   - **Endpoint:** `GET /api/v1/dev/{sn}`
   - **Returns:** List of `Component` objects
+
+#### Hierarchy [v2.2.0+]
+- `get_projects()`: List all projects
+  - **Endpoint:** `GET /api/v2/projects`
+  - **Response shape:** bare JSON array (no envelope)
+  - **Returns:** List of `Project` objects
+- `get_project_sites(project_id, page=1, page_size=100)`: List the sites of a project
+  - **Endpoint:** `GET /api/v2/project/{id}/sites`
+  - **Response shape:** `{"data": [...], "pagination": {...}}`
+  - **Returns:** List of `Site` objects for the requested page. A `WARNING` is logged
+    when `pagination.total_count` exceeds the page requested, so a short page cannot
+    silently pass for the whole set.
+- `get_site_devices(site_id)`: List the devices of a site
+  - **Endpoint:** `GET /api/v2/site/{id}/devices`
+  - **Response shape:** bare JSON array (no envelope)
+  - **Returns:** List of `Device` objects
 
 #### MQTT Subscription
 - `subscribe_mqtt_topics(device_id, sn)`: Subscribe to MQTT topics for real-time data
@@ -338,6 +391,14 @@ Based on **Elecnova ECO EMS Cloud API Interface Document V1.3.1**
 | `/api/v1/dev/pv/power-gen/daily/{sn}` | GET | Get PV daily generation (past 7 days) |
 | `/api/v1/dev/pv/power-gen/monthly/{sn}` | GET | Get PV monthly generation |
 | `/api/v1/dev/pv/power-gen/yearly/{sn}` | GET | Get PV yearly generation |
+
+### API Endpoints (v2.2.0)
+
+| Endpoint | Method | Response shape | Description |
+|----------|--------|----------------|-------------|
+| `/api/v2/projects` | GET | bare array | List projects |
+| `/api/v2/project/{id}/sites` | GET | `{data, pagination}` | List a project's sites (power stations) |
+| `/api/v2/site/{id}/devices` | GET | bare array | List a site's devices |
 
 ## Changelog
 
