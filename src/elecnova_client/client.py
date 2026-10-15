@@ -16,7 +16,11 @@ from .models import (
     ApiResponse,
     Cabinet,
     Component,
+    Device,
+    PaginatedV2Response,
     PowerDataPoint,
+    Project,
+    Site,
 )
 
 logger = logging.getLogger(__name__)
@@ -414,6 +418,100 @@ class ElecnovaClient:
 
         logger.info("MQTT credentials obtained successfully")
         return data
+
+    async def get_projects(self) -> list[Project]:
+        """Fetch all projects, the top level of the hierarchy (v2.2.0+).
+
+        Returns:
+            List of Project objects
+        """
+        logger.info("Fetching projects")
+
+        response = await self._request(
+            method="GET",
+            endpoint="/api/v2/projects",
+        )
+
+        # API returns a bare list of projects, not wrapped in an envelope
+        if not isinstance(response, list):
+            logger.warning(f"Unexpected response format: {type(response)}")
+            return []
+
+        projects = [Project.model_validate(item) for item in response]
+        logger.info(f"Retrieved {len(projects)} projects")
+        return projects
+
+    async def get_project_sites(
+        self,
+        project_id: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> list[Site]:
+        """Fetch the sites (power stations) of a project with pagination (v2.2.0+).
+
+        Args:
+            project_id: Project UUID (from get_projects())
+            page: Page number (1-indexed)
+            page_size: Number of records per page (API max 1000)
+
+        Returns:
+            List of Site objects for the requested page
+        """
+        logger.info(f"Fetching sites for project {project_id} page {page} (size: {page_size})")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v2/project/{project_id}/sites",
+            params={"page": page, "page_size": page_size},
+        )
+
+        # This endpoint wraps its records: {"data": [...], "pagination": {...}}
+        if not isinstance(response, dict):
+            logger.warning(f"Unexpected response format: {type(response)}")
+            return []
+
+        paginated = PaginatedV2Response[Site].model_validate(response)
+        sites = paginated.data
+
+        # Never let a short page look like the whole truth
+        pagination = paginated.pagination
+        if pagination and pagination.total_count > pagination.page * pagination.page_size:
+            logger.warning(
+                f"Project {project_id} has {pagination.total_count} sites, "
+                f"page {pagination.page} of size {pagination.page_size} does not cover them all; "
+                "request further pages"
+            )
+
+        logger.info(f"Retrieved {len(sites)} sites for project {project_id}")
+        return sites
+
+    async def get_site_devices(self, site_id: str) -> list[Device]:
+        """Fetch the devices of a site, the leaf level of the hierarchy (v2.2.0+).
+
+        Device IDs match Cabinet.id from get_cabinets(), so the hierarchy joins onto
+        the v1 device surface.
+
+        Args:
+            site_id: Site UUID (from get_project_sites())
+
+        Returns:
+            List of Device objects
+        """
+        logger.info(f"Fetching devices for site {site_id}")
+
+        response = await self._request(
+            method="GET",
+            endpoint=f"/api/v2/site/{site_id}/devices",
+        )
+
+        # API returns a bare list of devices, not wrapped in an envelope
+        if not isinstance(response, list):
+            logger.warning(f"Unexpected response format: {type(response)}")
+            return []
+
+        devices = [Device.model_validate(item) for item in response]
+        logger.info(f"Retrieved {len(devices)} devices for site {site_id}")
+        return devices
 
     async def get_pv_power_cap(self, sn: str, begin: str, end: str) -> list[PowerDataPoint]:
         """Get PV power generation with 5-minute intervals (v1.3.1+).

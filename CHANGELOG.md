@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-15
+
+### Added
+- **Elecnova API V2.2.0 project → site → device hierarchy** (released 2026-09-28, live
+  2026-10-15). Backwards compatible: no existing method or model changed.
+  - `get_projects()` — `GET /api/v2/projects`, returns `list[Project]`
+  - `get_project_sites(project_id, page=1, page_size=100)` — `GET /api/v2/project/{id}/sites`,
+    returns `list[Site]` for the requested page; logs a warning when `total_count`
+    exceeds the page, so a short page cannot pass for the whole set
+  - `get_site_devices(site_id)` — `GET /api/v2/site/{id}/devices`, returns `list[Device]`
+  - All three are on the async `ElecnovaClient` and the sync `ElecnovaClientSync`
+- New models: `Project`, `Site`, `Device`, `Pagination`, `PaginatedV2Response`
+- Join keys (verified live 2026-10-15):
+  - `Site.id` is the same UUID as the station ID in the Elecnova web UI — a durable
+    join key for site attribution, unlike the name
+  - `Device.id` is the same UUID as `Cabinet.id` from `GET /api/v1/dev`, so the v2
+    hierarchy joins cleanly onto the existing v1 surface
+
+### Notes
+- **Response shapes differ per endpoint.** `/api/v2/projects` and
+  `/api/v2/site/{id}/devices` answer with a **bare JSON array**;
+  `/api/v2/project/{id}/sites` answers with `{"data": [...], "pagination": {...}}`.
+  Neither uses the `{code,message,data}` envelope of some v1 endpoints.
+- **The v2 endpoints name their fields in snake_case** (`time_zone`, `begin_at`,
+  `rated_power`, `page_size`, `total_count`), unlike v1 which is camelCase for some
+  fields (`timeZone`, `lastSeen`). The models follow the wire format rather than
+  normalising it, so `Site.time_zone` has no `timeZone` alias.
+
+### Fixed
+- `__init__.__version__` was stale at `0.1.6` while `pyproject.toml` read `0.2.2`; both
+  now read `0.3.0`.
+
 ## [0.2.0] - 2025-11-13
 
 ### Breaking Changes

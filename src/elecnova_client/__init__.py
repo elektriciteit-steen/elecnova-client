@@ -14,9 +14,19 @@ from .exceptions import (
     ElecnovaRateLimitError,
     ElecnovaTimeoutError,
 )
-from .models import Cabinet, Component, PowerDataPoint, TokenResponse
+from .models import (
+    Cabinet,
+    Component,
+    Device,
+    PaginatedV2Response,
+    Pagination,
+    PowerDataPoint,
+    Project,
+    Site,
+    TokenResponse,
+)
 
-__version__ = "0.1.6"
+__version__ = "0.3.0"
 
 __all__ = [
     "ElecnovaClient",
@@ -27,6 +37,11 @@ __all__ = [
     "ElecnovaTimeoutError",
     "Cabinet",
     "Component",
+    "Device",
+    "Pagination",
+    "PaginatedV2Response",
     "PowerDataPoint",
+    "Project",
+    "Site",
     "TokenResponse",
 ]
